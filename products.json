@@ -1,0 +1,47 @@
+[
+  {
+    "id": "TEE-DRY-001",
+    "name": "T-shirt Dry-Fit Homme",
+    "price": 149,
+    "currency": "DH",
+    "cover": "https://picsum.photos/seed/tee1/600/400",
+    "images": [
+      "https://picsum.photos/seed/tee1/1000/700",
+      "https://picsum.photos/seed/tee12/1000/700",
+      "https://picsum.photos/seed/tee13/1000/700",
+      "https://picsum.photos/seed/tee14/1000/700",
+      "https://picsum.photos/seed/tee15/1000/700"
+    ],
+    "desc": "Respirant, séchage rapide pour l'entraînement."
+  },
+  {
+    "id": "LEGG-FEM-002",
+    "name": "Leggings Yoga Femme",
+    "price": 199,
+    "currency": "DH",
+    "cover": "https://picsum.photos/seed/legg/600/400",
+    "images": [
+      "https://picsum.photos/seed/legg1/1000/700",
+      "https://picsum.photos/seed/legg2/1000/700",
+      "https://picsum.photos/seed/legg3/1000/700",
+      "https://picsum.photos/seed/legg4/1000/700",
+      "https://picsum.photos/seed/legg5/1000/700"
+    ],
+    "desc": "Extensible, maintien optimal pour yoga/fitness."
+  },
+  {
+    "id": "DB-ADJ-020",
+    "name": "Haltères Ajustables 20–40kg",
+    "price": 1499,
+    "currency": "DH",
+    "cover": "https://picsum.photos/seed/db/600/400",
+    "images": [
+      "https://picsum.photos/seed/db1/1000/700",
+      "https://picsum.photos/seed/db2/1000/700",
+      "https://picsum.photos/seed/db3/1000/700",
+      "https://picsum.photos/seed/db4/1000/700",
+      "https://picsum.photos/seed/db5/1000/700"
+    ],
+    "desc": "Gain de place, changement de poids rapide."
+  }
+]
