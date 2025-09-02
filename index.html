@@ -127,7 +127,6 @@
       `).join('');
     }
 
-
     // -------- Cart (localStorage demo) --------
     function getCart(){ return JSON.parse(localStorage.getItem('cart')||'[]'); }
     function setCart(c){ localStorage.setItem('cart', JSON.stringify(c)); }
@@ -138,17 +137,6 @@
       setCart(cart);
       alert('Ajouté au panier');
     }
-
-    // -------- Render grid --------
-    const $grid = document.getElementById('grid');
-    $grid.innerHTML = products.map(p => `
-      <article class="card" data-id="${p.id}">
-        <div class="img"><img src="${p.cover}" alt="${p.name}"></div>
-        <div class="small">ID: ${p.id}</div>
-        <div style="font-weight:700">${p.name}</div>
-        <div class="price">${p.price.toLocaleString('fr-MA')} ${p.currency}</div>
-      </article>
-    `).join('');
 
     // -------- Modal logic --------
     const $modal = document.getElementById('modal');
@@ -171,7 +159,7 @@
       current = p; idx = 0;
       $mTitle.textContent = p.name;
       $mSku.textContent = 'ID: ' + p.id;
-      $mPrice.textContent = p.price.toLocaleString('fr-MA') + ' ' + p.currency;
+      $mPrice.textContent = Number(p.price).toLocaleString('fr-MA') + ' ' + (p.currency || 'DH');
       $mDesc.textContent = p.desc || '';
       renderGallery();
       $modal.classList.add('open');
@@ -190,7 +178,7 @@
     }
 
     // open
-    $grid.addEventListener('click', e=>{
+    document.getElementById('grid').addEventListener('click', e=>{
       const card = e.target.closest('.card'); if (!card) return;
       const id = card.getAttribute('data-id');
       const p = products.find(x=>x.id===id);
@@ -222,6 +210,9 @@
     // actions
     $add.addEventListener('click', ()=>{ if (current) addItem(current); });
     $buy.addEventListener('click', ()=>{ if (current) { addItem(current); alert('Passer à la commande (à faire)'); } });
+
+    // Kick off after page loads
+    renderGrid();
   </script>
 </body>
 </html>
