@@ -1,8 +1,23 @@
 [
   {
+    "id": "TEE-DRY-001",
+    "name": "T-shirt Dry-Fit Homme",
+    "price": 149,
+    "currency": "DH",
+    "cover": "https://picsum.photos/seed/tee1/600/400",
+    "images": [
+      "https://picsum.photos/seed/tee1/1000/700",
+      "https://picsum.photos/seed/tee12/1000/700",
+      "https://picsum.photos/seed/tee13/1000/700",
+      "https://picsum.photos/seed/tee14/1000/700",
+      "https://picsum.photos/seed/tee15/1000/700"
+    ],
+    "desc": "Respirant, séchage rapide pour l'entraînement."
+  },
+  {
     "id": "LEGG-FEM-002",
     "name": "Leggings Yoga Femme",
-    "price": 150,
+    "price": 199,
     "currency": "DH",
     "cover": "https://picsum.photos/seed/legg/600/400",
     "images": [
