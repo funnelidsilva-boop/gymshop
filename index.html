@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <title>GymShop</title>
+  <style>
+    body { font-family: sans-serif; margin:0; padding:0; background:#f8fafc; color:#0f172a; }
+    header { display:flex; justify-content:space-between; align-items:center; padding:16px; background:#0f172a; color:white; }
+    .brand { font-weight:900; }
+    nav a { color:white; margin-left:12px; text-decoration:none; }
+    main { max-width:900px; margin:0 auto; padding:20px; }
+    .grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:16px; }
+    .card { border:1px solid #e2e8f0; border-radius:10px; padding:12px; background:white; }
+    .price { font-weight:900; font-size:18px; }
+    .small { font-size:12px; color:#64748b; }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="brand">GYMCO.MA</div>
+    <nav>
+      <a href="#">Catalog</a>
+      <a href="#">Panier</a>
+      <a href="#">Admin</a>
+    </nav>
+  </header>
+  <main>
+    <h1>Bienvenue 👋</h1>
+    <p>Articles de gym avec paiement à la livraison (DH).</p>
+
+    <div class="grid">
+      <div class="card">
+        <div class="small">ID: TEE-DRY-001</div>
+        <div>T-shirt Dry-Fit Homme</div>
+        <div class="price">149 DH</div>
+      </div>
+      <div class="card">
+        <div class="small">ID: LEGG-FEM-002</div>
+        <div>Leggings Yoga Femme</div>
+        <div class="price">199 DH</div>
+      </div>
+      <div class="card">
+        <div class="small">ID: DB-ADJ-020</div>
+        <div>Haltères Ajustables 20–40kg</div>
+        <div class="price">1499 DH</div>
+      </div>
+    </div>
+  </main>
+</body>
+</html>
