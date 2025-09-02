@@ -12,11 +12,18 @@
     main { max-width:1200px; margin:0 auto; padding:20px; }
 
     .grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:16px; }
-    .card { border:1px solid #e2e8f0; border-radius:12px; padding:12px; background:white; cursor:pointer }
+    .card { position:relative; border:1px solid #e2e8f0; border-radius:12px; padding:12px; background:white; cursor:pointer }
     .price { font-weight:900; font-size:18px; }
     .small { font-size:12px; color:#64748b; }
     .img { height:160px; background:#e2e8f0; border-radius:10px; margin-bottom:8px; display:flex; align-items:center; justify-content:center; overflow:hidden }
     .img img { width:100%; height:100%; object-fit:cover }
+
+    /* Product pick checkbox (top-right on card) */
+    .pickwrap { position:absolute; top:10px; right:10px; z-index:2 }
+    .pick { width:22px; height:22px; border-radius:6px; border:1px solid #cbd5e1; appearance:none; background:#fff; display:inline-grid; place-content:center; cursor:pointer }
+    .pick::before { content:""; width:14px; height:14px; transform:scale(0); transition:120ms transform ease-in-out; background:#0f172a; clip-path:polygon(14% 44%,0 59%,37% 96%,100% 22%,85% 8%,37% 71%); }
+    .pick:checked { border-color:#0f172a; }
+    .pick:checked::before { transform:scale(1); }
 
     /* Modal */
     .modal { position:fixed; inset:0; background:rgba(2,6,23,.75); display:none; align-items:center; justify-content:center; padding:16px; z-index:50 }
@@ -39,9 +46,6 @@
     .priceBig { font-weight:900; font-size:24px }
     .btn { padding:10px 14px; border:1px solid #e2e8f0; border-radius:999px; background:#0f172a; color:#fff; cursor:pointer }
     .btn.secondary { background:#fff; color:#0f172a }
-    .badges { display:flex; gap:8px; flex-wrap:wrap }
-    .badge { border:1px solid #e2e8f0; border-radius:999px; padding:6px 10px; color:#475569; font-size:12px }
-    .notice { font-size:12px; color:#475569 }
 
     /* Panier (right column) */
     .cartBox { border:1px solid #e2e8f0; border-radius:12px; background:#fff; overflow:hidden }
@@ -66,11 +70,11 @@
     <!-- LEFT: CATALOG -->
     <section>
       <h1>Bienvenue 👋</h1>
-      <p>Articles de gym avec paiement à la livraison (DH).</p>
+      <p>Cocher rapidement les produits à commander. Cliquez sur une carte (pas la case) pour voir la galerie.</p>
 
       <!-- PRODUCTS GRID -->
       <div id="grid" class="grid"></div>
-      <p class="notice">Cliquez un produit pour voir les 5 images et ajouter au panier.</p>
+      <p class="small" style="color:#64748b">Astuce: utilisez les cases pour sélectionner vite 10+ produits.</p>
     </section>
 
     <!-- RIGHT: PANIER (same page) -->
@@ -94,8 +98,6 @@
           <button class="btn" id="checkoutBtn">Commander (COD)</button>
         </div>
       </div>
-
-      <p class="small" style="margin-top:8px;color:#64748b">Astuce: cochez seulement les articles que vous voulez commander maintenant.</p>
     </aside>
   </main>
 
@@ -118,16 +120,10 @@
         <div class="sku" id="mSku"></div>
         <div class="priceBig" id="mPrice"></div>
         <p id="mDesc"></p>
-        <div class="badges">
-          <span class="badge">Livraison 24–72h</span>
-          <span class="badge">Retour 30 jours</span>
-          <span class="badge">Paiement à la livraison</span>
-        </div>
-        <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px">
           <button class="btn" id="addToCart">Ajouter au panier</button>
-          <button class="btn secondary" id="buyNow">Commander maintenant</button>
+          <button class="btn secondary" id="buyNow">Acheter</button>
         </div>
-        <div class="notice">Nous appelons pour confirmer avant expédition.</div>
       </section>
     </div>
   </div>
@@ -146,45 +142,47 @@
       }
     }
 
-    // -------- Render grid (after load) --------
-    async function renderGrid(){
-      await loadProducts();
-      const $grid = document.getElementById('grid');
-      if (!products.length){
-        $grid.innerHTML = '<p class="small">Aucun produit. Éditez <code>products.json</code>.</p>';
-        return;
-      }
-      $grid.innerHTML = products.map(p => `
-        <article class="card" data-id="${p.id}">
-          <div class="img"><img src="${p.cover}" alt="${p.name}"></div>
-          <div class="small">ID: ${p.id}</div>
-          <div style="font-weight:700">${p.name}</div>
-          <div class="price">${Number(p.price).toLocaleString('fr-MA')} ${p.currency || 'DH'}</div>
-        </article>
-      `).join('');
-    }
-
-    // -------- Cart (localStorage demo) --------
+    // -------- Cart helpers --------
     function getCart(){ return JSON.parse(localStorage.getItem('cart')||'[]'); }
     function setCart(c){ localStorage.setItem('cart', JSON.stringify(c)); }
+    function inCart(id){ return getCart().some(x=>x.id===id); }
     function addItem(p){
       const cart = getCart();
       const ex = cart.find(x=>x.id===p.id);
       if (ex) {
         ex.qty = (ex.qty||1) + 1;
       } else {
-        cart.push({
-          id: p.id,
-          name: p.name,
-          price: p.price,
-          currency: p.currency || 'DH',
-          qty: 1,
-          cover: p.cover || ''
-        });
+        cart.push({ id:p.id, name:p.name, price:p.price, currency:p.currency||'DH', qty:1, cover:p.cover||'' });
       }
       setCart(cart);
-      alert('Ajouté au panier');
-      renderCart(); // refresh right panel
+      renderCart();
+    }
+    function removeItem(id){
+      const cart = getCart().filter(x=>x.id!==id);
+      setCart(cart);
+      renderCart();
+    }
+
+    // -------- Render grid (with checkboxes) --------
+    async function renderGrid(){
+      await loadProducts();
+      const $grid = document.getElementById('grid');
+      const cartIds = new Set(getCart().map(x=>x.id));
+      if (!products.length){
+        $grid.innerHTML = '<p class="small">Aucun produit. Éditez <code>products.json</code>.</p>';
+        return;
+      }
+      $grid.innerHTML = products.map(p => `
+        <article class="card" data-id="${p.id}">
+          <div class="pickwrap" data-stop>
+            <input type="checkbox" class="pick" ${cartIds.has(p.id)?'checked':''} title="Sélection rapide">
+          </div>
+          <div class="img"><img src="${p.cover}" alt="${p.name}"></div>
+          <div class="small">ID: ${p.id}</div>
+          <div style="font-weight:700">${p.name}</div>
+          <div class="price">${Number(p.price).toLocaleString('fr-MA')} ${p.currency || 'DH'}</div>
+        </article>
+      `).join('');
     }
 
     // ===== Panier (same page) =====
@@ -195,16 +193,18 @@
     function money(n){ return Number(n||0).toLocaleString('fr-MA') + ' DH'; }
 
     function renderCart(){
-      const items = getCart(); // [{id,name,price,currency,qty,cover}]
+      const items = getCart();
       if (!items.length){
         $cartList.innerHTML = '<div style="padding:12px" class="small">Votre panier est vide.</div>';
         $checkAll.checked = false;
         updateCartTotal();
+        // sync card checkboxes
+        document.querySelectorAll('.card .pick').forEach(ch => ch.checked = false);
         return;
       }
       $cartList.innerHTML = items.map((p, i) => `
         <div class="cartRow row" data-i="${i}">
-          <input type="checkbox" class="chk" ${p.checked ? 'checked':''} />
+          <input type="checkbox" class="chk" checked />
           <div style="display:flex;align-items:center;gap:8px">
             <div class="cartImg">${p.cover?`<img src="${p.cover}" alt="${p.name}">`:'—'}</div>
             <div>
@@ -221,6 +221,14 @@
           <button class="delBtn del" title="Supprimer">✕</button>
         </div>
       `).join('');
+
+      // sync card checkboxes
+      const ids = new Set(items.map(x=>x.id));
+      document.querySelectorAll('.card').forEach(card=>{
+        const id = card.getAttribute('data-id');
+        const pick = card.querySelector('.pick');
+        if (pick) pick.checked = ids.has(id);
+      });
 
       syncSelectAll();
       updateCartTotal();
@@ -245,7 +253,32 @@
       $cartTotal.textContent = money(sum);
     }
 
-    // Panier events (qty +/−, delete, checkbox, select all, checkout)
+    // Grid events:
+    // - Click on checkbox => add/remove without opening modal
+    // - Click on card (not checkbox) => open modal/gallery
+    document.getElementById('grid').addEventListener('change', (e)=>{
+      if (!e.target.classList.contains('pick')) return;
+      const card = e.target.closest('.card');
+      const id = card.getAttribute('data-id');
+      const p = products.find(x=>x.id===id);
+      if (!p) return;
+
+      if (e.target.checked) {
+        addItem(p); // adds qty 1
+      } else {
+        removeItem(p.id);
+      }
+    });
+
+    document.getElementById('grid').addEventListener('click', (e)=>{
+      if (e.target.closest('.pickwrap')) return; // don't open modal when clicking checkbox
+      const card = e.target.closest('.card'); if (!card) return;
+      const id = card.getAttribute('data-id');
+      const p = products.find(x=>x.id===id);
+      if (p) openModal(p);
+    });
+
+    // Cart events (qty +/−, delete, checkbox, select all, checkout)
     $cartList.addEventListener('click', (e)=>{
       const row = e.target.closest('.row'); if (!row) return;
       const i = Number(row.getAttribute('data-i'));
@@ -261,8 +294,14 @@
         setCart(items); renderCart(); return;
       }
       if (e.target.classList.contains('del')){
+        const removedId = it.id;
         items.splice(i,1);
-        setCart(items); renderCart(); return;
+        setCart(items);
+        renderCart();
+        // also uncheck card
+        const cardPick = document.querySelector(`.card[data-id="${removedId}"] .pick`);
+        if (cardPick) cardPick.checked = false;
+        return;
       }
     });
 
@@ -305,8 +344,8 @@
     const $prev = document.getElementById('prev');
     const $next = document.getElementById('next');
 
-    let current = null; // product
-    let idx = 0;        // image index
+    let current = null;
+    let idx = 0;
 
     function openModal(p){
       current = p; idx = 0;
@@ -330,43 +369,42 @@
       $thumbs.innerHTML = imgs.map((src,i)=>`<img src="${src}" alt="miniature ${i+1}" data-i="${i}" class="${i===idx?'active':''}">`).join('');
     }
 
-    // open
     document.getElementById('grid').addEventListener('click', e=>{
-      const card = e.target.closest('.card'); if (!card) return;
-      const id = card.getAttribute('data-id');
-      const p = products.find(x=>x.id===id);
-      if (p) openModal(p);
+      // handled above (we split handlers)
     });
-    // close
+
     $close.addEventListener('click', closeModal);
     $modal.addEventListener('click', e=>{ if (e.target === $modal) closeModal(); });
     document.addEventListener('keydown', e=>{ if (e.key==='Escape') closeModal(); });
 
-    // thumbs
     $thumbs.addEventListener('click', e=>{
       const im = e.target.closest('img'); if (!im) return;
       idx = Number(im.dataset.i)||0; renderGallery();
     });
 
-    // arrows
     $prev.addEventListener('click', ()=>{ idx = (idx-1+current.images.length)%current.images.length; renderGallery(); });
     $next.addEventListener('click', ()=>{ idx = (idx+1)%current.images.length; renderGallery(); });
 
-    // swipe on hero (mobile)
     let startX=null;
     $heroImg.addEventListener('touchstart', e=>{ startX = e.touches[0].clientX; });
     $heroImg.addEventListener('touchend', e=>{
-      if (startX===null) return; const dx = e.changedTouches[0].clientX - startX; startX=null;
-      if (Math.abs(dx)<40) return; if (dx>0) $prev.click(); else $next.click();
+      if (startX===null) return;
+      const dx = e.changedTouches[0].clientX - startX;
+      startX=null;
+      if (Math.abs(dx)<40) return;
+      if (dx>0) $prev.click(); else $next.click();
     });
 
-    // actions
-    $add.addEventListener('click', ()=>{ if (current) addItem(current); });
-    $buy.addEventListener('click', ()=>{ if (current) { addItem(current); renderCart(); } });
+    // actions in modal
+    $add.addEventListener('click', ()=>{ if (current) { addItem(current); } });
+    $buy.addEventListener('click', ()=>{ if (current) { addItem(current); } });
 
     // Kick off
-    renderGrid();
-    renderCart();
+    awaitInit();
+    async function awaitInit(){
+      await renderGrid();
+      renderCart();
+    }
   </script>
 </body>
 </html>
