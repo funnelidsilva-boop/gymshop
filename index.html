@@ -46,11 +46,12 @@
 <body>
   <header>
     <div class="brand">GYMCO.MA</div>
-    <nav>
-      <a href="#">Catalog</a>
-      <a href="#">Panier</a>
-      <a href="admin.html">Admin</a>
-    </nav>
+<nav>
+  <a href="#">Catalog</a>
+  <a href="cart.html">Panier</a>
+  <a href="admin.html">Admin</a>
+</nav>
+
   </header>
 
   <main>
@@ -130,13 +131,25 @@
     // -------- Cart (localStorage demo) --------
     function getCart(){ return JSON.parse(localStorage.getItem('cart')||'[]'); }
     function setCart(c){ localStorage.setItem('cart', JSON.stringify(c)); }
-    function addItem(p){
-      const cart = getCart();
-      const ex = cart.find(x=>x.id===p.id);
-      if (ex) ex.qty = (ex.qty||1)+1; else cart.push({ id:p.id, name:p.name, price:p.price, currency:p.currency, qty:1 });
-      setCart(cart);
-      alert('Ajouté au panier');
-    }
+function addItem(p){
+  const cart = getCart();
+  const ex = cart.find(x=>x.id===p.id);
+  if (ex) {
+    ex.qty = (ex.qty||1) + 1;
+  } else {
+    cart.push({
+      id: p.id,
+      name: p.name,
+      price: p.price,
+      currency: p.currency || 'DH',
+      qty: 1,
+      cover: p.cover || ''
+    });
+  }
+  setCart(cart);
+  alert('Ajouté au panier');
+}
+
 
     // -------- Modal logic --------
     const $modal = document.getElementById('modal');
