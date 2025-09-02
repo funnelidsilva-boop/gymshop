@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <title>Panier • GymShop</title>
+  <style>
+    body { font-family: system-ui,-apple-system,Segoe UI,Roboto,Arial; margin:0; background:#f8fafc; color:#0f172a }
+    header { display:flex; justify-content:space-between; align-items:center; padding:16px; background:#0f172a; color:#fff }
+    header a { color:#fff; text-decoration:none }
+    main { max-width:900px; margin:0 auto; padding:16px }
+    .list { border:1px solid #e2e8f0; border-radius:12px; background:#fff; overflow:hidden }
+    .row { display:grid; grid-template-columns:28px 1fr auto auto 30px; gap:10px; align-items:center; padding:10px 12px; border-bottom:1px solid #e2e8f0 }
+    .row:last-child { border-bottom:none }
+    .img { width:48px; height:48px; border:1px solid #e2e8f0; border-radius:8px; overflow:hidden; background:#f1f5f9; display:flex; align-items:center; justify-content:center; margin-right:8px }
+    .img img { width:100%; height:100%; object-fit:cover }
+    .name { font-weight:700; font-size:14px }
+    .id { font-size:12px; color:#64748b }
+    .price { font-weight:900 }
+    .qty { display:flex; align-items:center; gap:6px }
+    .qty button { width:26px; height:26px; border-radius:8px; border:1px solid #e2e8f0; background:#fff; cursor:pointer }
+    .del { all:unset; cursor:pointer; color:#ef4444; text-align:center }
+    .topbar { display:flex; justify-content:space-between; align-items:center; margin-bottom:8px }
+    .selectall { display:flex; align-items:center; gap:8px; font-size:14px }
+    .empty { padding:16px; color:#64748b }
+    .totalbar { position:sticky; bottom:0; background:#fff; border:1px solid #e2e8f0; border-radius:12px; margin-top:12px; padding:12px; display:flex; justify-content:space-between; align-items:center }
+    .btn { padding:10px 14px; border:1px solid #e2e8f0; border-radius:10px; background:#0f172a; color:#fff; cursor:pointer }
+    .muted { color:#64748b; font-size:12px }
+  </style>
+</head>
+<body>
+  <header>
+    <a href="index.html">← Retour boutique</a>
+    <div>Panier</div>
+    <div style="width:110px"></div>
+  </header>
+
+  <main>
+    <div class="topbar">
+      <label class="selectall">
+        <input type="checkbox" id="checkAll">
+        <span>Tout sélectionner</span>
+      </label>
+      <button class="btn" id="clearCart">Vider le panier</button>
+    </div>
+
+    <div id="list" class="list"></div>
+
+    <div class="totalbar">
+      <div>
+        <div class="muted">Total des articles sélectionnés</div>
+        <div id="total" style="font-weight:900; font-size:20px">0 DH</div>
+      </div>
+      <button class="btn" id="checkout">Commander (COD)</button>
+    </div>
+
+    <p class="muted">Astuce: cochez seulement les produits que vous voulez commander maintenant.</p>
+  </main>
+
+  <script>
+    // --- LocalStorage helpers ---
+    function getCart(){ return JSON.parse(localStorage.getItem('cart')||'[]'); }
+    function setCart(c){ localStorage.setItem('cart', JSON.stringify(c)); }
+
+    // --- State ---
+    let items = getCart(); // [{id, name, price, currency, qty, cover}]
+    const currency = 'DH';
+
+    const $list = document.getElementById('list');
+    const $total = document.getElementById('total');
+    const $checkAll = document.getElementById('checkAll');
+
+    function money(n){ return Number(n||0).toLocaleString('fr-MA') + ' ' + currency; }
+
+    function render(){
+      items = getCart();
+      if (!items.length){
+        $list.innerHTML = '<div class="empty">Votre panier est vide.</div>';
+        $checkAll.checked = false;
+        updateTotal();
+        return;
+      }
+      $list.innerHTML = items.map((p, i) => `
+        <div class="row" data-i="${i}">
+          <input type="checkbox" class="chk" ${p.checked ? 'checked':''} />
+          <div style="display:flex; align-items:center;">
+            <div class="img">${p.cover?`<img src="${p.cover}" alt="${p.name}">`:'—'}</div>
+            <div>
+              <div class="name">${p.name}</div>
+              <div class="id">ID: ${p.id}</div>
+            </div>
+          </div>
+          <div class="qty">
+            <button class="minus">−</button>
+            <span>${p.qty||1}</span>
+            <button class="plus">+</button>
+          </div>
+          <div class="price">${money((p.qty||1)*p.price)}</div>
+          <button class="del" title="Supprimer">✕</button>
+        </div>
+      `).join('');
+      syncCheckAll();
+      updateTotal();
+    }
+
+    function syncCheckAll(){
+      const chks = Array.from(document.querySelectorAll('.chk'));
+      if (!chks.length) { $checkAll.checked = false; return; }
+      $checkAll.checked = chks.every(c => c.checked);
+    }
+
+    function updateTotal(){
+      const selected = items.filter((p, i) => {
+        const row = document.querySelector(`.row[data-i="${i}"] .chk`);
+        return row && row.checked;
+      });
+      const sum = selected.reduce((a,b)=> a + (b.price * (b.qty||1)), 0);
+      $total.textContent = money(sum);
+    }
+
+    // --- Events ---
+    $list.addEventListener('click', (e)=>{
+      const row = e.target.closest('.row'); if (!row) return;
+      const i = Number(row.getAttribute('data-i'));
+      const it = items[i];
+
+      if (e.target.classList.contains('plus')){
+        it.qty = (it.qty||1) + 1;
+        setCart(items); render(); return;
+      }
+      if (e.target.classList.contains('minus')){
+        it.qty = Math.max(1, (it.qty||1) - 1);
+        setCart(items); render(); return;
+      }
+      if (e.target.classList.contains('del')){
+        items.splice(i,1);
+        setCart(items); render(); return;
+      }
+    });
+
+    // checkbox changes (row + select all)
+    $list.addEventListener('change', (e)=>{
+      if (e.target.classList.contains('chk')){
+        updateTotal();
+        syncCheckAll();
+      }
+    });
+    $checkAll.addEventListener('change', ()=>{
+      document.querySelectorAll('.chk').forEach(ch => ch.checked = $checkAll.checked);
+      updateTotal();
+    });
+
+    // clear & checkout
+    document.getElementById('clearCart').addEventListener('click', ()=>{
+      if (confirm('Vider tout le panier ?')){
+        setCart([]); render();
+      }
+    });
+    document.getElementById('checkout').addEventListener('click', ()=>{
+      const selected = items.filter((p, i) => {
+        const row = document.querySelector(`.row[data-i="${i}"] .chk`);
+        return row && row.checked;
+      });
+      if (!selected.length){ alert('Sélectionnez au moins un article.'); return; }
+      alert('Checkout COD (à faire ensuite).');
+    });
+
+    // init
+    render();
+  </script>
+</body>
+</html>
