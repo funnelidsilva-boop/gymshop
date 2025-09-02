@@ -96,51 +96,37 @@
   </div>
 
   <script>
-    // -------- Demo products (edit these for your catalog) --------
-    const products = [
-      {
-        id: 'TEE-DRY-001',
-        name: 'T-shirt Dry-Fit Homme',
-        price: 149, currency: 'DH',
-        cover: 'https://picsum.photos/seed/tee1/600/400',
-        images: [
-          'https://picsum.photos/seed/tee1/1000/700',
-          'https://picsum.photos/seed/tee12/1000/700',
-          'https://picsum.photos/seed/tee13/1000/700',
-          'https://picsum.photos/seed/tee14/1000/700',
-          'https://picsum.photos/seed/tee15/1000/700',
-        ],
-        desc: "Respirant, séchage rapide pour l'entraînement."
-      },
-      {
-        id: 'LEGG-FEM-002',
-        name: 'Leggings Yoga Femme',
-        price: 199, currency: 'DH',
-        cover: 'https://picsum.photos/seed/legg/600/400',
-        images: [
-          'https://picsum.photos/seed/legg1/1000/700',
-          'https://picsum.photos/seed/legg2/1000/700',
-          'https://picsum.photos/seed/legg3/1000/700',
-          'https://picsum.photos/seed/legg4/1000/700',
-          'https://picsum.photos/seed/legg5/1000/700',
-        ],
-        desc: 'Extensible, maintien optimal pour yoga/fitness.'
-      },
-      {
-        id: 'DB-ADJ-020',
-        name: 'Haltères Ajustables 20–40kg',
-        price: 1499, currency: 'DH',
-        cover: 'https://picsum.photos/seed/db/600/400',
-        images: [
-          'https://picsum.photos/seed/db1/1000/700',
-          'https://picsum.photos/seed/db2/1000/700',
-          'https://picsum.photos/seed/db3/1000/700',
-          'https://picsum.photos/seed/db4/1000/700',
-          'https://picsum.photos/seed/db5/1000/700',
-        ],
-        desc: 'Gain de place, changement de poids rapide.'
+    // -------- Load products from products.json --------
+    let products = [];
+
+    async function loadProducts(){
+      try {
+        const res = await fetch('products.json', { cache: 'no-store' });
+        products = await res.json();
+      } catch (e) {
+        console.error('Failed to load products.json', e);
+        products = [];
       }
-    ];
+    }
+
+    // -------- Render grid (after load) --------
+    async function renderGrid(){
+      await loadProducts();
+      const $grid = document.getElementById('grid');
+      if (!products.length){
+        $grid.innerHTML = '<p class="small">Aucun produit. Éditez <code>products.json</code>.</p>';
+        return;
+      }
+      $grid.innerHTML = products.map(p => `
+        <article class="card" data-id="${p.id}">
+          <div class="img"><img src="${p.cover}" alt="${p.name}"></div>
+          <div class="small">ID: ${p.id}</div>
+          <div style="font-weight:700">${p.name}</div>
+          <div class="price">${Number(p.price).toLocaleString('fr-MA')} ${p.currency || 'DH'}</div>
+        </article>
+      `).join('');
+    }
+
 
     // -------- Cart (localStorage demo) --------
     function getCart(){ return JSON.parse(localStorage.getItem('cart')||'[]'); }
