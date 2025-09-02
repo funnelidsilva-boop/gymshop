@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+  <title>Admin Editor • GymShop</title>
+  <style>
+    body { font-family: system-ui,-apple-system,Segoe UI,Roboto,Arial; margin:0; background:#0f172a; color:#e5e7eb }
+    header { display:flex; justify-content:space-between; align-items:center; padding:12px 16px; background:#0b1220; border-bottom:1px solid #1f2937 }
+    a.btn, button.btn { padding:8px 12px; border:1px solid #1f2937; border-radius:10px; background:#111827; color:#e5e7eb; text-decoration:none; cursor:pointer }
+    .wrap { max-width:1100px; margin:0 auto; padding:16px }
+    .grid { display:grid; grid-template-columns:1fr 1fr; gap:14px }
+    @media (max-width:900px){ .grid{ grid-template-columns:1fr } }
+    .card { background:#111827; border:1px solid #1f2937; border-radius:12px; padding:12px }
+    label { display:block; font-size:12px; color:#94a3b8; margin:8px 0 4px }
+    input, textarea { width:100%; padding:10px; border-radius:10px; border:1px solid #1f2937; background:#0b1220; color:#e5e7eb }
+    textarea { min-height:120px }
+    table { width:100%; border-collapse:collapse; }
+    th, td { border-bottom:1px solid #1f2937; padding:8px; font-size:14px }
+    th { text-align:left; color:#94a3b8 }
+    .row-actions button { margin-right:6px }
+    .muted { color:#94a3b8; font-size:12px }
+    .pill { display:inline-block; padding:2px 8px; border:1px solid #1f2937; border-radius:999px; font-size:12px; color:#cbd5e1 }
+    .danger { background:#7f1d1d; border-color:#b91c1c }
+    .ok { background:#166534; border-color:#16a34a }
+    .good { color:#86efac }
+  </style>
+</head>
+<body>
+  <header>
+    <div>GYMCO.MA • <span class="muted">Admin Editor (JSON)</span></div>
+    <nav>
+      <a class="btn" href="index.html">Voir boutique</a>
+      <a class="btn" href="dashboard.html">Dashboard</a>
+    </nav>
+  </header>
+
+  <div class="wrap">
+    <div class="grid">
+      <!-- Left: editor form -->
+      <section class="card">
+        <h2 style="margin:4px 0 8px">Éditer un produit</h2>
+        <form id="form">
+          <div class="muted">Astuce: **ID** = SKU unique (ex: TEE-DRY-001). Prix en **DH** (nombre).</div>
+          <label>ID (SKU)</label>
+          <input id="f_id" placeholder="TEE-DRY-001" required>
+          <label>Nom</label>
+          <input id="f_name" placeholder="T-shirt Dry-Fit Homme" required>
+          <label>Prix (DH)</label>
+          <input id="f_price" type="number" min="0" step="1" placeholder="149" required>
+          <label>Image de couverture (URL)</label>
+          <input id="f_cover" placeholder="https://…/cover.jpg">
+          <label>Description</label>
+          <textarea id="f_desc" placeholder="Description courte…"></textarea>
+          <label>Images (5+ URLs, une par ligne)</label>
+          <textarea id="f_images" placeholder="https://…/1.jpg
+https://…/2.jpg
+https://…/3.jpg
+https://…/4.jpg
+https://…/5.jpg"></textarea>
+          <div style="display:flex;gap:8px;margin-top:10px">
+            <button class="btn ok" type="submit">Enregistrer / Mettre à jour</button>
+            <button class="btn danger" type="button" id="btnDelete">Supprimer</button>
+            <button class="btn" type="button" id="btnReset">Nouveau</button>
+          </div>
+          <div class="muted" id="msg"></div>
+        </form>
+      </section>
+
+      <!-- Right: products table + export -->
+      <section class="card">
+        <h2 style="margin:4px 0 8px">Produits (<span id="count">0</span>)</h2>
+        <div class="muted">Cliquez une ligne pour charger dans le formulaire.</div>
+        <div style="max-height:360px; overflow:auto; border:1px solid #1f2937; border-radius:10px">
+          <table id="table">
+            <thead>
+              <tr><th>ID</th><th>Nom</th><th>Prix</th><th>Couverture</th></tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+
+        <h3 style="margin:14px 0 8px">Exporter JSON à coller dans <code>products.json</code></h3>
+        <textarea id="out" class="muted" readonly></textarea>
+        <div style="display:flex;gap:8px;margin-top:8px">
+          <button class="btn" id="btnCopy">Copier JSON</button>
+          <button class="btn" id="btnDownload">Télécharger JSON</button>
+        </div>
+        <p class="muted">Ensuite: ouvrez <code>products.json</code> sur GitHub → ✏️ → collez → Commit.</p>
+      </section>
+    </div>
+  </div>
+
+  <script>
+    // ---- State ----
+    let products = [];
+
+    async function loadProducts(){
+      try {
+        const res = await fetch('products.json', { cache: 'no-store' });
+        products = await res.json();
+      } catch (e) {
+        products = [];
+      }
+    }
+
+    function toMoney(n){ return Number(n||0).toLocaleString('fr-MA') + ' DH'; }
+
+    function renderTable(){
+      const tbody = document.querySelector('#table tbody');
+      tbody.innerHTML = products.map(p => `
+        <tr data-id="${p.id}">
+          <td><span class="pill">${p.id}</span></td>
+          <td>${p.name || ''}</td>
+          <td>${toMoney(p.price)}</td>
+          <td>${p.cover ? '<span class="good">✔</span>' : '—'}</td>
+        </tr>
+      `).join('');
+      document.getElementById('count').textContent = products.length;
+    }
+
+    function setForm(p){
+      document.getElementById('f_id').value = p?.id || '';
+      document.getElementById('f_name').value = p?.name || '';
+      document.getElementById('f_price').value = p?.price ?? '';
+      document.getElementById('f_cover').value = p?.cover || '';
+      document.getElementById('f_desc').value = p?.desc || '';
+      document.getElementById('f_images').value = (p?.images || []).join('\n');
+      document.getElementById('msg').textContent = '';
+    }
+
+    function getForm(){
+      const id = document.getElementById('f_id').value.trim();
+      const name = document.getElementById('f_name').value.trim();
+      const price = Number(document.getElementById('f_price').value);
+      const cover = document.getElementById('f_cover').value.trim();
+      const desc = document.getElementById('f_desc').value.trim();
+      const images = document.getElementById('f_images').value
+        .split('\n').map(s=>s.trim()).filter(Boolean);
+
+      return { id, name, price, currency:'DH', cover, images, desc };
+    }
+
+    function upsertProduct(p){
+      const i = products.findIndex(x=>x.id === p.id);
+      if (i >= 0) products[i] = p; else products.unshift(p);
+    }
+
+    function deleteProduct(id){
+      products = products.filter(x => x.id !== id);
+    }
+
+    function exportJSON(){
+      return JSON.stringify(products, null, 2);
+    }
+
+    function refreshOutput(){
+      document.getElementById('out').value = exportJSON();
+      renderTable();
+    }
+
+    // ---- Events ----
+    document.getElementById('table').addEventListener('click', e=>{
+      const tr = e.target.closest('tr'); if (!tr) return;
+      const id = tr.getAttribute('data-id');
+      const p = products.find(x=>x.id === id);
+      if (p) setForm(p);
+    });
+
+    document.getElementById('form').addEventListener('submit', (e)=>{
+      e.preventDefault();
+      const p = getForm();
+      if (!p.id) { alert('ID (SKU) requis'); return; }
+      if (!p.name) { alert('Nom requis'); return; }
+      if (!(p.images && p.images.length >= 5)) {
+        if (!confirm('Moins de 5 images. Continuer ?')) return;
+      }
+      upsertProduct(p);
+      setForm(p);
+      refreshOutput();
+      document.getElementById('msg').textContent = '✅ Enregistré dans l’éditeur (copiez le JSON ci-dessous).';
+    });
+
+    document.getElementById('btnDelete').addEventListener('click', ()=>{
+      const id = document.getElementById('f_id').value.trim();
+      if (!id) return;
+      if (confirm('Supprimer ce produit ?')) {
+        deleteProduct(id);
+        setForm({});
+        refreshOutput();
+      }
+    });
+
+    document.getElementById('btnReset').addEventListener('click', ()=> setForm({}));
+
+    document.getElementById('btnCopy').addEventListener('click', async ()=>{
+      try {
+        await navigator.clipboard.writeText(exportJSON());
+        alert('JSON copié. Ouvrez products.json sur GitHub et collez.');
+      } catch (e) {
+        alert('Copie échouée. Sélectionnez manuellement le texte et copiez.');
+      }
+    });
+
+    document.getElementById('btnDownload').addEventListener('click', ()=>{
+      const blob = new Blob([exportJSON()], { type:'application/json' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'products.json';
+      a.click();
+    });
+
+    // ---- Init ----
+    (async function init(){
+      await loadProducts();
+      renderTable();
+      refreshOutput();
+    })();
+  </script>
+</body>
+</html>
